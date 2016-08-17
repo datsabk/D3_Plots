@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<span style="font-size:larger;">Count Legend</span>
+<ul class="list-inline"><li class="q0-9">1-2000</li><li class="q1-9">2001-4000</li><li class="q2-9">4001-6000</li><li class="q3-9">6001-8000</li><li class="q4-9">8001-10000</li><li class="q5-9">10001-12000</li><li class="q6-9">12001-14000</li><li class="q7-9">14001-16000</li><li class="q8-9">16001-18000</li></ul>
+<style>
+.list-inline {
+    padding-left: 0;
+    list-style: none;
+}
+ul, ol {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+li{
+    font-size: .75em;
+    width: 10%;
+    padding-left: 0;
+    padding-right: 0;
+	display: inline-block;
+    color: white;
+    text-align: center;
+    font-size: larger;
+}
+.counties {
+  fill: none;
+  stroke: #fff;
+  
+  stroke-linejoin: round;
+}
+
+.states {
+  fill: none;
+  stroke: #fff;
+  stroke-linejoin: round;
+}
+.tooltip {
+      background: #fdd0a2;
+      box-shadow: 0 0 5px #999999;
+      color: #333;
+      display: none;
+      left: 300px;
+      padding: 10px;
+      position: absolute;
+      text-align: center;
+      width: 80px;
+      z-index: 10;
+    }
+    .legend rect {
+  fill:white;
+  stroke:black;
+  opacity:0.8;}
+.q0-9 { fill:rgb(33,218,243);background:rgb(33,218,243); }
+.q1-9 { fill:rgb(222,235,247); background:rgb(222,235,247); }
+.q2-9 { fill:rgb(198,219,239); background:rgb(198,219,239); }
+.q3-9 { fill:rgb(158,202,225); background:rgb(158,202,225); }
+.q4-9 { fill:rgb(107,174,214); background:rgb(107,174,214); }
+.q5-9 { fill:rgb(66,146,198); background:rgb(66,146,198); }
+.q6-9 { fill:rgb(33,113,181); background:rgb(33,113,181); }
+.q7-9 { fill:rgb(8,81,156); background:rgb(8,81,156); }
+.q8-9 { fill:rgb(8,48,107); background:rgb(8,48,107); }
+
+</style>
+<svg width="960" height="600"></svg>
+<script src="d3.min.js"></script>
+<script src="topojson.js"></script>
+<script>
+
+var svg = d3.select("svg"),
+    width = +svg.attr("width"),
+    height = +svg.attr("height");
+
+var rateById = d3.map();
+
+var quantize = d3.scaleQuantile()
+    .domain([0, 18000])
+    .range(d3.range(9).map(function(i) { return "q" + i + "-9"; }));
+
+var projection = d3.geoAlbersUsa()
+    .scale(1280)
+    .translate([width / 2, height / 2]);
+
+var path = d3.geoPath()
+    .projection(projection);
+
+d3.queue()
+    .defer(d3.json, "states.json")
+    .defer(d3.csv, "states.csv", function(d) { rateById.set(d["state"], +d["count"]); })
+    .await(ready);
+
+
+var tooltip = d3.select("body")
+    .append("div")
+    .style("position", "absolute")
+    .style("z-index", "10")
+    .style("visibility", "hidden")
+	.style("padding","10px")
+	.style("background-color","blueviolet")
+	.style("color","white")
+
+function ready(error, us) {
+  if (error) throw error;
+
+  svg.append("g")
+      .attr("class", "counties")
+    .selectAll("path")
+      .data(us.features)
+    .enter().append("path")
+      .attr("class", function(d) {console.log(rateById.get(d.properties.abbr)); return quantize(rateById.get(d.properties.abbr)); })
+      .attr("d", path).on("mouseover", function(d){tooltip.text("State: "+d.properties.name+" || Count: "+rateById.get(d.properties.abbr));return tooltip.style("visibility", "visible");})
+.on("mousemove", function(){return tooltip.style("top",
+    (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
+.on("mouseout", function(){return tooltip.style("visibility", "hidden");});;
+ 
+ 
+}
+
+</script>

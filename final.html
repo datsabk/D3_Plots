@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<div>
+<span style="font-size:larger;">Count Legend</span>
+<ul class="list-inline"><li class="lbubble-1">1-40</li><li class="lbubble-2">41-80</li><li class="lbubble-3">81-120</li><li class="lbubble-4">121-160</li><li class="lbubble-5">161-200</li><li class="lbubble-6">201-240</li><li class="lbubble-7">241-280</li><li class="lbubble-8">281-320</li><li class="lbubble-9">321-360</li></ul>
+</div>
+<style>
+.list-inline {
+    padding-left: 0;
+    list-style: none;
+}
+ul, ol {
+    margin-top: 0;
+    margin-bottom: 10px;
+} 
+.tooltip {
+      background: #fdd0a2;
+      box-shadow: 0 0 5px #999999;
+      color: #333;
+      display: none;
+      left: 300px;
+      padding: 10px;
+      position: absolute;
+      text-align: center;
+      width: 80px;
+      z-index: 10;
+    }
+.legend rect {
+  fill:white;
+  stroke:black;
+  opacity:0.8;
+ }
+
+ li{
+    font-size: .75em;
+    width: 10%;
+    padding-left: 0;
+    padding-right: 0;
+	display: inline-block;
+    color: white;
+    text-align: center;
+    font-size: larger;
+}
+.lbubble-1 {
+  background:rgb(247,251,255);
+  color:rgb(8,48,107) !important;
+}
+.lbubble-2 {
+  background:rgb(222,235,247);
+  color:rgb(8,48,107) !important;
+}
+.lbubble-3 {
+  background:rgb(198,219,239);
+}
+.lbubble-4 {
+  background:rgb(158,202,225);
+}
+.lbubble-5 {
+  background:rgb(107,174,214);
+}
+.lbubble-6 {
+  background:rgb(66,146,198); 
+}
+.lbubble-7 {
+  background:rgb(33,113,181);
+}
+.lbubble-8 {
+  background:rgb(8,81,156);
+}
+
+.lbubble-9 {
+  background:rgb(8,48,107);
+}
+.counties {
+  fill: none;
+}
+
+.states {
+  fill: none;
+  stroke: #fff;
+  stroke-linejoin: round;
+}
+.imageclass{
+background-image:url("image_thumb_1.png");
+background-size:cover;
+}
+.q0-9 { fill:rgb(247,251,255); }
+.q1-9 { fill:rgb(222,235,247); }
+.q2-9 { fill:rgb(198,219,239); }
+.q3-9 { fill:rgb(158,202,225); }
+.q4-9 { fill:rgb(107,174,214); }
+.q5-9 { fill:rgb(66,146,198); }
+.q6-9 { fill:rgb(33,113,181); }
+.q7-9 { fill:rgb(8,81,156); }
+.q8-9 { fill:rgb(8,48,107); }
+.zip {
+    fill: none;
+    stroke: #CCC;
+    stroke-width: .5px;
+  }
+</style>
+<svg width="960" height="600"></svg>
+<script src="d3.min.js"></script>
+<script src="topojson.js"></script>
+<script>
+
+var svg = d3.select("svg"),
+    width = +svg.attr("width"),
+    height = +svg.attr("height");
+var tooltip = d3.select("body")
+    .append("div")
+    .style("position", "absolute")
+    .style("z-index", "10")
+    .style("visibility", "hidden")
+	.style("padding","10px")
+	.style("background-color","blueviolet")
+	.style("color","white")
+    .text("a simple tooltip");
+var rateById = d3.map();
+
+var quantize = d3.scaleQuantize()
+	.domain([0,355])
+    .range(d3.range(355).map(function(i) { console.log("i:"+i);return "q" + Math.floor(i/40) + "-9"; }));
+
+var projection = d3.geoAlbersUsa()
+    .scale(1280)
+    .translate([width / 2, height / 2]);
+
+var path = d3.geoPath()
+    .projection(projection);
+
+d3.queue()
+    .defer(d3.json, "us.json")
+    .defer(d3.csv, "unemployment.csv", function(d) { rateById.set(+d["zip"], +d["count"]); })
+    .await(ready);
+
+function ready(error, us) {
+  if (error) throw error;
+
+  svg.attr("class","imageclass").append("g")
+      .attr("class", "counties")
+    .selectAll("path")
+      .data(topojson.feature(us, us.objects.zip_codes_for_the_usa).features)
+    .enter().append("path")
+      .attr("class", function(d) {
+		  if(rateById.get(d.properties.zip)!=undefined || rateById.get(d.properties.zip)!='undefined')
+		  {
+			  return quantize(rateById.get(d.properties.zip)); 
+		  }
+		  else 
+		  {
+			  console.log("zip");
+			  return "zip";
+		  }
+	  })
+      .attr("d", path).on("mouseover", function(d){tooltip.text("Zip: "+d.properties.zip+" || Count: "+rateById.get(d.properties.zip));return tooltip.style("visibility", "visible");})
+.on("mousemove", function(){return tooltip.style("top",
+    (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
+.on("mouseout", function(){return tooltip.style("visibility", "hidden");});;
+}
+
+</script>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<div>
+<span style="font-size:larger;">Count Legend</span>
+<ul class="list-inline"><li class="lbubble-1">1-60</li><li class="lbubble-2">61-120</li><li class="lbubble-3">120-180</li><li class="lbubble-4">180-240</li><li class="lbubble-5">241-300</li><li class="lbubble-6">301-360</li><li class="lbubble-7">360-420</li><li class="lbubble-8">421-480</li><li class="lbubble-9">481-540</li></ul>
+</div>
+<style>
+.list-inline {
+    padding-left: 0;
+    list-style: none;
+}
+ul, ol {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+path {
+  fill: none;
+ 
+}
+ .tooltip {
+      background: #fdd0a2;
+      box-shadow: 0 0 5px #999999;
+      color: #333;
+      display: none;
+      left: 300px;
+      padding: 10px;
+      position: absolute;
+      text-align: center;
+      width: 80px;
+      z-index: 10;
+    }
+    .legend rect {
+  fill:white;
+  stroke:black;
+  opacity:0.8;}
+.land {
+	
+}
+.bubble-1 {
+  fill-opacity: .5;
+  stroke: #fff;
+  stroke-width: .5px;
+  fill:red;
+}
+.bubble-2 {
+  fill-opacity: .5;
+  stroke: #fff;
+  stroke-width: .5px;
+  fill:green;
+}
+.bubble-3 {
+  fill-opacity: .5;
+  stroke: #fff;
+  stroke-width: .5px;
+  fill:#f43691;
+}
+.bubble-4 {
+  fill-opacity: .5;
+  stroke: #fff;
+  stroke-width: .5px;
+  fill:#36e6f4;
+}
+.bubble-5 {
+  fill-opacity: .5;
+  stroke: #fff;
+  stroke-width: .5px;
+  fill:#f44336;
+}
+.bubble-6 {
+  fill-opacity: .5;
+  stroke: #fff;
+  stroke-width: .5px;
+  fill:#03a9f4;
+}
+.bubble-7 {
+  fill-opacity: .5;
+  stroke: #fff;
+  stroke-width: .5px;
+  fill:#9c27b0;
+}
+.bubble-8 {
+  fill-opacity: .5;
+  stroke: #fff;
+  stroke-width: .5px;
+  fill:#ffc107;
+}
+
+.bubble-9 {
+  fill-opacity: .5;
+  stroke: #fff;
+  stroke-width: .5px;
+  fill:#8bc34a;
+}
+li{
+    font-size: .75em;
+    width: 10%;
+    padding-left: 0;
+    padding-right: 0;
+	display: inline-block;
+    color: white;
+    text-align: center;
+    font-size: larger;
+}
+.lbubble-1 {
+  background:red;
+}
+.lbubble-2 {
+  background:green;
+}
+.lbubble-3 {
+  background:#f43691;
+}
+.lbubble-4 {
+  background:#36e6f4;
+}
+.lbubble-5 {
+  background:#f44336;
+}
+.lbubble-6 {
+  background:#03a9f4;
+}
+.lbubble-7 {
+  background:#9c27b0;
+}
+.lbubble-8 {
+  background:#ffc107;
+}
+
+.lbubble-9 {
+  background:#8bc34a;
+}
+.imageclass{
+background-image:url("image_thumb_1.png");
+background-size:cover;
+}
+</style>
+<body>
+<script src="d3.min.js" charset="utf-8"></script>
+<script src="topojson.js"></script>
+<script>
+
+var width = 960,
+    height = 600;
+
+var rateById = d3.map();
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+
+
+var projection = d3.geoAlbersUsa()
+    .scale(1280)
+    .translate([width / 2, height / 2]);
+
+var path = d3.geoPath()
+    .projection(projection);
+
+d3.queue()
+    .defer(d3.json, "us.json")
+    .defer(d3.csv, "unemployment.csv", function(d) { rateById.set(+d["zip"], +d["count"]); })
+    .await(ready);
+
+var radius = d3.scaleLinear()
+    .domain([0, 540])
+    .range([2, 35]);
+var tooltip = d3.select("body")
+    .append("div")
+    .style("position", "absolute")
+    .style("z-index", "10")
+    .style("visibility", "hidden")
+	.style("padding","10px")
+	.style("background-color","blueviolet")
+	.style("color","white")
+    .text("a simple tooltip");
+function ready(error, us) {
+  if (error) throw error;
+
+svg.attr("class","imageclass").append("path")
+    .datum(topojson.feature(us, us.objects.zip_codes_for_the_usa))
+    .attr("class", "land")
+    .attr("d", path);
+svg.append("g")
+      .selectAll("circle")
+    .data(topojson.feature(us, us.objects.zip_codes_for_the_usa).features)
+  .enter().append("circle")
+    .attr("transform", function(d) { return "translate(" + path.centroid(d) + ")"; }) .attr("data-legend",function(d) { return  rateById.get(d.properties.zip)})
+    .attr("r", function(d) {
+		 if(!(rateById.get(d.properties.zip)==undefined || rateById.get(d.properties.zip)=='undefined'))
+		  {
+			  console.log(radius(rateById.get(d.properties.zip)));
+			  return radius(rateById.get(d.properties.zip)); 
+		  }
+		  else 
+		  {
+			  return 0;
+		  }
+	})
+	.attr("class", function(d) {
+		
+		 if(!(rateById.get(d.properties.zip)==undefined || rateById.get(d.properties.zip)=='undefined'))
+		  {
+			  return "bubble-"+(Math.ceil(rateById.get(d.properties.zip)/60)); 
+		  }
+		  else 
+		  {
+			  return "bubble-1";
+		  }}).on("mouseover", function(d){tooltip.text("Zip: "+d.properties.zip+" || Count: "+rateById.get(d.properties.zip));return tooltip.style("visibility", "visible");})
+.on("mousemove", function(){return tooltip.style("top",
+    (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");})
+.on("mouseout", function(){return tooltip.style("visibility", "hidden");});
+
+}
+</script>
